@@ -82,6 +82,11 @@ void mdarray_free(MDArray* arr) {
 size_t mdarray_calculate_index(MDArray* arr, size_t* indices) {
     size_t flat_index = 0;
     for (size_t i = 0; i < arr->ndim; i++) {
+        if (indices[i] >= arr->shape[i]) {  // Add bounds checking
+            printf("Index out of bounds: indices[%zu]=%zu >= shape[%zu]=%zu\n",
+                   i, indices[i], i, arr->shape[i]);
+            return (size_t)-1;  // Return max value to indicate error
+        }
         flat_index += indices[i] * arr->strides[i];
     }
     return flat_index;

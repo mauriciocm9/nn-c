@@ -29,9 +29,16 @@
 # List of source files
 cmake_minimum_required(VERSION 3.10)
 
+
+find_package(JPEG REQUIRED)
+
+include_directories(/opt/homebrew/include)
+link_directories(/opt/homebrew/lib)
+
 set(SOURCE_FILES
     main.c
     mdarray.c
 )
 
 add_executable(main ${SOURCE_FILES})
+target_link_libraries(main PRIVATE /opt/homebrew/lib/libjpeg.dylib)

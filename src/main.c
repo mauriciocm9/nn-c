@@ -45,7 +45,7 @@ void write_jpeg(MDArray* imgs) {
     while (cinfo.next_scanline < cinfo.image_height) {
         JSAMPROW row_pointer[1];
         //row_pointer[0] = &grayscale_data[cinfo.next_scanline * 28];
-        size_t idx[] = {cinfo.next_scanline, 0};
+        size_t idx[] = {0, cinfo.next_scanline, 0};
         row_pointer[0] = (unsigned char*)mdarray_get_element(imgs, idx);
         jpeg_write_scanlines(&cinfo, row_pointer, 1);
     }
@@ -67,60 +67,86 @@ int read_int(FILE* file) {
     return out;
 }
 
-int read_images(char* filename) {
+MDArray* read_images(char* filename) {
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
         perror("Error opening file");
-        return 1;
+        return NULL;
     }
 
-    int msb = read_int(file); 
-    if(msb == -1) return -1;
-    int n_samples = read_int(file); 
-    if(n_samples == -1) return -1;
+    int msb = read_int(file);
+    if(msb == -1) return NULL;
+    int n_samples = read_int(file);
+    if(n_samples == -1) return NULL;
 
-    int r_size = read_int(file); 
-    if(r_size == -1) return -1;
-    int c_size = read_int(file); 
-    if(c_size == -1) return -1;
+    int r_size = read_int(file);
+    if(r_size == -1) return NULL;
+    int c_size = read_int(file);
+    if(c_size == -1) return NULL;
 
-
-    printf("%d\n", msb);
-    printf("%d\n", n_samples);
-    printf("%d\n", r_size);
-    printf("%d\n", c_size);
+    printf("Magic number: %d\n", msb);
+    printf("Number images: %d\n", n_samples);
+    printf("X size: %d\n", r_size);
+    printf("Y size: %d\n", c_size);
 
     unsigned char imgbytes[IMG_SIZE];
     size_t bytes_read;
 
-    MDArray* imgs = malloc(sizeof(MDArray)*n_samples);
+    size_t shape[] = {n_samples, r_size, c_size};
+    MDArray* imgs = mdarray_create(3, shape, sizeof(unsigned char));
     int index = 0;
 
     while ((bytes_read = fread(imgbytes, 1, IMG_SIZE, file)) > 0) {
-        size_t shape[] = {28, 28};
-        MDArray* img_arr = mdarray_create(2, shape, sizeof(unsigned char));
-
         for (size_t i = 0; i < bytes_read; i++) {
-            size_t indices[] = {i/28, i%28};
-            mdarray_set_element(img_arr, indices, &imgbytes[i]);
+            size_t indices[] = {index, i/28, i%28};
+            mdarray_set_element(imgs, indices, &imgbytes[i]);
         }
-
-        memcpy(&imgs[index++], img_arr, sizeof(MDArray));
+        index++;
     }
 
     write_jpeg(imgs);
 
     fclose(file);
-    return 0;
+    return imgs;
 }
 
-int read_labels(char* filename) {
-    return 1;
+MDArray* read_labels(char* filename) {
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL) {
+        perror("Error opening file");
+        return NULL;
+    }
+
+    int msb = read_int(file);
+    if(msb == -1) return NULL;
+    int n_samples = read_int(file);
+    if(n_samples == -1) return NULL;
+
+    printf("Magic number: %d\n", msb);
+    printf("Number labels: %d\n", n_samples);
+
+    size_t shape[] = {n_samples};
+    MDArray* labels = mdarray_create(1, shape, sizeof(unsigned char));
+
+    unsigned char* labelbytes = (unsigned char*)malloc(sizeof(unsigned char) * n_samples);
+    size_t bytes_read;
+
+    while ((bytes_read = fread(labelbytes, 1, n_samples, file)) > 0) {
+        for (size_t i = 0; i < bytes_read; i++) {
+            size_t indices[] = {i};
+            mdarray_set_element(labels, indices, &labelbytes[i]);
+        }
+    }
+
+    size_t indices[] = {0};
+    printf("%d\n", *(unsigned char*)mdarray_get_element(labels, indices));
+    return labels;
 }
 
 int main() {
-    int x,y;
-    x = read_images("../data/train-images.idx3-ubyte");
-    //y = read("../data/train-labels.idx1-ubyte");
-    printf("Hello world, %d %d\n", x, y);
+    MDArray* images = read_images("../data/train-images.idx3-ubyte");
+    MDArray* labels = read_labels("../data/train-labels.idx1-ubyte");
+
+
+    linear_train(images, labels);
 }

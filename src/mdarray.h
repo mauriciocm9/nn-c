@@ -121,15 +121,17 @@ MDArray* mdarray_dot(MDArray* x, MDArray* y) {
     MDArray* out = mdarray_create(2, shape, sizeof(double));
     for(size_t i = 0; i < x->shape[0]; i++) {
         double outval = 0;
-        for(size_t j = 0; j < y->shape[0]; j++) {
-            size_t ix[] = {i, j};
-            size_t iy[] = {j, 0};
-            double xval = *(double*) mdarray_get_element(x, ix);
-            double yval = *(double*) mdarray_get_element(y, iy);
-            outval += xval*yval;
+        for(size_t k = 0; k < y->shape[1]; k++) {
+            for(size_t j = 0; j < y->shape[0]; j++) {
+                size_t ix[] = {i, j};
+                size_t iy[] = {j, k};
+                double xval = *(double*) mdarray_get_element(x, ix);
+                double yval = *(double*) mdarray_get_element(y, iy);
+                outval += xval*yval;
+            }
+            size_t idx[] = {i, k};
+            mdarray_set_element(out, idx, &outval);
         }
-        size_t idx[] = {i, 0};
-        mdarray_set_element(out, idx, &outval);
     }
 
     return out;

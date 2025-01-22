@@ -8,13 +8,13 @@
 #define IMG_SIZE 784
 
 void write_jpeg(MDArray* imgs) {
-    /*unsigned char grayscale_data[IMG_SIZE];
-    for (int x = 0; x < 28; x++) {
-        for (int y = 0; y < 28; y++) {
-            size_t idx[] = {x, y};
-            grayscale_data[x * 28 + y] = *(unsigned char*)mdarray_get_element(imgs, idx);
+    unsigned char grayscale_data[IMG_SIZE];
+    for (size_t x = 0; x < 28; x++) {
+        for (size_t y = 0; y < 28; y++) {
+            size_t idx[] = {0, x, y};
+            grayscale_data[x * 28 + y] = (unsigned char)*(double*)mdarray_get_element(imgs, idx);
         }
-    }*/
+    }
 
     // Set up libjpeg structures
     struct jpeg_compress_struct cinfo;
@@ -44,9 +44,9 @@ void write_jpeg(MDArray* imgs) {
     // Write the grayscale image row by row
     while (cinfo.next_scanline < cinfo.image_height) {
         JSAMPROW row_pointer[1];
-        //row_pointer[0] = &grayscale_data[cinfo.next_scanline * 28];
-        size_t idx[] = {0, cinfo.next_scanline, 0};
-        row_pointer[0] = (unsigned char*)mdarray_get_element(imgs, idx);
+        row_pointer[0] = &grayscale_data[cinfo.next_scanline * 28];
+        //size_t idx[] = {0, cinfo.next_scanline, 0};
+        //row_pointer[0] = (unsigned char*)mdarray_get_element(imgs, idx);
         jpeg_write_scanlines(&cinfo, row_pointer, 1);
     }
 
@@ -86,27 +86,28 @@ MDArray* read_images(char* filename) {
 
     printf("Magic number: %d\n", msb);
     printf("Number images: %d\n", n_samples);
-    printf("X size: %d\n", r_size);
-    printf("Y size: %d\n", c_size);
+    printf("Image shape %dx%d\n", r_size, c_size);
 
     unsigned char imgbytes[IMG_SIZE];
     size_t bytes_read;
 
     size_t shape[] = {n_samples, r_size, c_size};
-    MDArray* imgs = mdarray_create(3, shape, sizeof(unsigned char));
+    MDArray* imgs = mdarray_create(3, shape, sizeof(double));
     int index = 0;
 
     while ((bytes_read = fread(imgbytes, 1, IMG_SIZE, file)) > 0) {
         for (size_t i = 0; i < bytes_read; i++) {
             size_t indices[] = {index, i/28, i%28};
-            mdarray_set_element(imgs, indices, &imgbytes[i]);
+            unsigned char c = imgbytes[i];
+            double x = (double)c;
+            mdarray_set_element(imgs, indices, &x);
         }
         index++;
     }
 
     write_jpeg(imgs);
-
     fclose(file);
+
     return imgs;
 }
 
@@ -126,7 +127,7 @@ MDArray* read_labels(char* filename) {
     printf("Number labels: %d\n", n_samples);
 
     size_t shape[] = {n_samples};
-    MDArray* labels = mdarray_create(1, shape, sizeof(unsigned char));
+    MDArray* labels = mdarray_create(1, shape, sizeof(double));
 
     unsigned char* labelbytes = (unsigned char*)malloc(sizeof(unsigned char) * n_samples);
     size_t bytes_read;
@@ -134,12 +135,14 @@ MDArray* read_labels(char* filename) {
     while ((bytes_read = fread(labelbytes, 1, n_samples, file)) > 0) {
         for (size_t i = 0; i < bytes_read; i++) {
             size_t indices[] = {i};
-            mdarray_set_element(labels, indices, &labelbytes[i]);
+            unsigned char c = labelbytes[i];
+            double x = (double)c;
+            mdarray_set_element(labels, indices, &x);
         }
     }
 
     size_t indices[] = {0};
-    printf("%d\n", *(unsigned char*)mdarray_get_element(labels, indices));
+    printf("First label is: %f\n", *(double*)mdarray_get_element(labels, indices));
     return labels;
 }
 

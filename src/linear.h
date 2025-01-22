@@ -28,21 +28,12 @@ LinearModel* linearmodel_new(MDArray* images, MDArray* labels) {
 }
 
 MDArray* linearmodel_forward(LinearModel* model) {
-    //return model->images * model->weights + model->biases;
-    //we need images to be an array of nx768 probably, in theory is just plain we need
-    //to alter just the strides, weigths is already in 10x768
-    //also implement the multiply matrix
-    
-    // n, 28, 28
-    // need to get a pointer to image for now of size 768x1
-
-    // We just want one the first image for now
-    size_t shape[] = {0};
-    MDArray* img = mdarray_copy(model->images, 1, shape); // this is array 28x28
+    size_t idx[] = {0};
+    MDArray* img = mdarray_copy(model->images, 1, idx); // this is array 28x28
     size_t shape_f[] = {784, 1};
     MDArray* img_flatten = mdarray_resize(img, 2, shape_f); // this is array 28x28
     //printf("%zu %zu\n", model->images->ndim, model->images->shape[0]);
-    printf("%zu %zu\n", img->ndim, img->shape[0]);
+    //printf("%zu %zu\n", img->ndim, img->shape[0]);
 
     return mdarray_dot(model->weights, img);
 }

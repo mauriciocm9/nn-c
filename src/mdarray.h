@@ -110,8 +110,6 @@ MDArray* mdarray_dot(MDArray* x, MDArray* y) {
     // x   10x768
     // y   768x1
     // out 10x1
-     printf("x.shape[1](%zu) is y.shape[0](%zu)\n", x->shape[1], y->shape[0]);
-    fflush(stdout);
     if(x->shape[1] != y->shape[0]) {
         printf("x.shape[1](%zu) different than y.shape[0](%zu)\n", x->shape[1], y->shape[0]);
         return NULL;

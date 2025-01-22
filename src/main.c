@@ -3,7 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include "mdarray.h"
-#include "image.h"
+#include "linear.h"
 
 #define IMG_SIZE 784
 
@@ -148,5 +148,8 @@ int main() {
     MDArray* labels = read_labels("../data/train-labels.idx1-ubyte");
 
 
-    linear_train(images, labels);
+    LinearModel* model = linearmodel_new(images, labels);
+    MDArray* out = linearmodel_forward(model);
+    size_t shape[] = {0,0};
+    printf("%f\n", *(double*) mdarray_get_element(out, shape));
 }

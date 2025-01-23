@@ -168,19 +168,19 @@ MDArray* mdarray_copy(MDArray* arr, size_t ndim, size_t* start) {
     }
     
     size_t stride = 1;
-    for (size_t i = ndim - 1; i < ndim; i--) {
+    for (size_t i = new_arr->ndim - 1; i < new_arr->ndim; i--) {
         new_arr->strides[i] = stride;
         stride *= new_arr->shape[i];
     }
 
     size_t flat_index = 0;
     for (size_t i = 0; i < ndim; i++) {
-        flat_index += start[i] * arr->strides[i];
+        flat_index += start[i] * arr->strides[i]; // Find position in old array
     }
  
     // Start pointer at given index
     new_arr->data = &arr->data[flat_index];
-    if (!arr->data) {
+    if (!new_arr->data) {
         free(new_arr->strides);
         free(new_arr->shape);
         free(new_arr);
@@ -193,7 +193,10 @@ MDArray* mdarray_copy(MDArray* arr, size_t ndim, size_t* start) {
 MDArray* mdarray_resize(MDArray* arr, size_t ndim, size_t* shape) {
     MDArray* new_arr = (MDArray*)malloc(sizeof(MDArray));
     if(!new_arr) return NULL;
+
     new_arr->ndim = ndim;
+    new_arr->itemsize = arr->itemsize;
+    new_arr->total_size = arr->total_size;
 
     // Allocate and copy shape array
     new_arr->shape = (size_t*)malloc(ndim * sizeof(size_t));
@@ -222,5 +225,19 @@ MDArray* mdarray_resize(MDArray* arr, size_t ndim, size_t* shape) {
     return new_arr;
 }
 
+
+void mdarray_ones(MDArray* arr) {
+    for(size_t i = 0; i < arr->total_size; i++) {
+        double x = 1;
+        memcpy((char*)arr->data + (i * arr->itemsize), &x, arr->itemsize);
+    }
+}
+
+void mdarray_zeros(MDArray* arr) {
+    for(size_t i = 0; i < arr->total_size; i++) {
+        double x = 0;
+        memcpy((char*)arr->data + (i * arr->itemsize), &x, arr->itemsize);
+    }
+}
 
 #endif // MDARRAY_H

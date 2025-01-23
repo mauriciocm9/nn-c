@@ -154,5 +154,5 @@ int main() {
     LinearModel* model = linearmodel_new(images, labels);
     MDArray* out = linearmodel_forward(model);
     size_t shape[] = {0,0};
-    printf("%f\n", *(double*) mdarray_get_element(out, shape));
+    printf("Value is %f\n", *(double*) mdarray_get_element(out, shape));
 }

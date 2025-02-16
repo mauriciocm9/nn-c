@@ -24,7 +24,8 @@ LinearModel* linearmodel_new(MDArray* images, MDArray* labels) {
 
     size_t shape_b[] = {10, 1};
     model->biases  = mdarray_create(2, shape_b, sizeof(double));
-    mdarray_zeros(model->biases);
+    mdarray_ones(model->biases);
+
     return model;
 }
 
@@ -47,7 +48,7 @@ MDArray* linearmodel_forward(LinearModel* model) {
     }*/
 
 
-    return mdarray_dot(model->weights, img_flatten); // TODO: sum with biases
+    return mdarray_sum(mdarray_dot(model->weights, img_flatten), model->biases);
 }
 
 LinearModel* loss_function(LinearModel* model) {

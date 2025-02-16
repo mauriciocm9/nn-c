@@ -225,6 +225,19 @@ MDArray* mdarray_resize(MDArray* arr, size_t ndim, size_t* shape) {
     return new_arr;
 }
 
+MDArray* mdarray_sum(MDArray* a, MDArray* b) {
+    // TODO: Figure out how to do sum with different shapes check numpy doc.
+    MDArray* out = mdarray_create(2, a->shape, sizeof(double));
+    for(size_t i = 0; i < a->total_size; i++) {
+        double x = *(double*)&a->data[i];
+        double y = x + *(double*)&b->data[i];
+        memcpy((char*)out->data + (i * a->itemsize), &y, a->itemsize);
+    }
+
+    return out;
+}
+
+
 
 void mdarray_ones(MDArray* arr) {
     for(size_t i = 0; i < arr->total_size; i++) {

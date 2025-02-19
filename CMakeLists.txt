@@ -3,7 +3,11 @@ project(NNC)
 
 add_subdirectory(src)
 
-add_executable(NNC src/main.c)
+add_executable(NNC
+        src/main.c
+        src/mdarray.c
+)
+
 target_include_directories(NNC PRIVATE include)
 
 find_package(JPEG REQUIRED)

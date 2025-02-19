@@ -1,2 +1,6 @@
-data/
 cmake/
+.idea/*
+build/**
+data/**
+tests/unity**
+cmake-build-debug

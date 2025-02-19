@@ -1,5 +1,6 @@
 #include <stdio.h>
-
+#include <stdlib.h>
+#include "mdarray.h"
 
 // Structure to hold array metadata
 typedef struct {

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <jpeglib.h>
 #include <math.h>
-#include <string.h>
 #include "mdarray.h"
 #include "linear.h"
 

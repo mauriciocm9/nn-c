@@ -1,5 +1,6 @@
 cmake/
 .idea/*
-tests/unity/*
-tests/unity/**
 build/**
+data/**
+tests/unity**
+cmake-build-debug

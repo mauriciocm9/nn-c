@@ -93,6 +93,9 @@ size_t mdarray_calculate_index(MDArray* arr, size_t* indices) {
 
 void* mdarray_get_element(MDArray* arr, size_t* indices) {
     size_t index = mdarray_calculate_index(arr, indices);
+    if (index == (size_t)-1) {  // Check for the error value
+        return NULL;
+    }
     return (char*)arr->data + (index * arr->itemsize);
 }
 
@@ -120,8 +123,8 @@ MDArray* mdarray_dot(MDArray* x, MDArray* y) {
     size_t shape[] = {x->shape[0], y->shape[1]};
     MDArray* out = mdarray_create(2, shape, sizeof(double));
     for(size_t i = 0; i < x->shape[0]; i++) {
-        double outval = 0;
         for(size_t k = 0; k < y->shape[1]; k++) {
+            double outval = 0;  // Reset for each element of output matrix
             for(size_t j = 0; j < y->shape[0]; j++) {
                 size_t ix[] = {i, j};
                 size_t iy[] = {j, k};
@@ -130,7 +133,7 @@ MDArray* mdarray_dot(MDArray* x, MDArray* y) {
                 outval += xval*yval;
             }
             size_t idx[] = {i, k};
-            mdarray_set_element(out, idx, &outval);
+            mdarray_set_element(out, idx, &outval);  // Write after full sum is computed
         }
     }
 

@@ -1,2 +1,5 @@
-data/
 cmake/
+.idea/*
+tests/unity/*
+tests/unity/**
+build/**

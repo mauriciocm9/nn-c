@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 MDArray* mdarray_create(size_t ndim, size_t* shape, size_t itemsize) {
     MDArray* arr = (MDArray*)malloc(sizeof(MDArray));
@@ -47,13 +48,17 @@ MDArray* mdarray_create(size_t ndim, size_t* shape, size_t itemsize) {
         return NULL;
     }
 
+    arr->owns_data = true;
+
     return arr;
 }
 
 
 void mdarray_free(MDArray* arr) {
     if (arr) {
-        free(arr->data);
+        if (arr->owns_data) {
+            free(arr->data);
+        }
         free(arr->shape);
         free(arr->strides);
         free(arr);
@@ -171,6 +176,8 @@ MDArray* mdarray_copy(MDArray* arr, size_t ndim, size_t* start) {
         return NULL;
     }
 
+    new_arr->owns_data = false;
+
     return new_arr;
 }
 
@@ -205,6 +212,7 @@ MDArray* mdarray_resize(MDArray* arr, size_t ndim, size_t* shape) {
     }
 
     new_arr->data = arr->data;
+    new_arr->owns_data = false;
 
     return new_arr;
 }
@@ -235,4 +243,77 @@ void mdarray_zeros(MDArray* arr) {
         double x = 0;
         memcpy((char*)arr->data + (i * arr->itemsize), &x, arr->itemsize);
     }
+}
+
+void mdarray_randn(MDArray* arr, double scale) {
+    // Box-Muller transform: pairs of uniform randoms -> normal distribution
+    for (size_t i = 0; i < arr->total_size; i += 2) {
+        double u1 = ((double)rand() + 1.0) / ((double)RAND_MAX + 1.0);
+        double u2 = ((double)rand() + 1.0) / ((double)RAND_MAX + 1.0);
+        double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2) * scale;
+        double z1 = sqrt(-2.0 * log(u1)) * sin(2.0 * M_PI * u2) * scale;
+        memcpy((char*)arr->data + (i * arr->itemsize), &z0, arr->itemsize);
+        if (i + 1 < arr->total_size) {
+            memcpy((char*)arr->data + ((i + 1) * arr->itemsize), &z1, arr->itemsize);
+        }
+    }
+}
+
+MDArray* mdarray_transpose_2d(MDArray* arr) {
+    if (!arr || arr->ndim != 2) return NULL;
+
+    size_t rows = arr->shape[0];
+    size_t cols = arr->shape[1];
+    size_t shape[] = {cols, rows};
+    MDArray* out = mdarray_create(2, shape, arr->itemsize);
+    if (!out) return NULL;
+
+    for (size_t i = 0; i < rows; i++) {
+        for (size_t j = 0; j < cols; j++) {
+            size_t src[] = {i, j};
+            size_t dst[] = {j, i};
+            void* val = mdarray_get_element(arr, src);
+            mdarray_set_element(out, dst, val);
+        }
+    }
+
+    return out;
+}
+
+MDArray* mdarray_get(MDArray* arr, size_t index) {
+    if (!arr || index >= arr->shape[0]) return NULL;
+    if (arr->ndim == 1) return NULL;
+
+    size_t new_ndim = arr->ndim - 1;
+
+    MDArray* view = (MDArray*)malloc(sizeof(MDArray));
+    if (!view) return NULL;
+
+    view->ndim = new_ndim;
+    view->itemsize = arr->itemsize;
+    view->owns_data = false;
+
+    view->shape = (size_t*)malloc(new_ndim * sizeof(size_t));
+    if (!view->shape) {
+        free(view);
+        return NULL;
+    }
+    memcpy(view->shape, &arr->shape[1], new_ndim * sizeof(size_t));
+
+    view->strides = (size_t*)malloc(new_ndim * sizeof(size_t));
+    if (!view->strides) {
+        free(view->shape);
+        free(view);
+        return NULL;
+    }
+    memcpy(view->strides, &arr->strides[1], new_ndim * sizeof(size_t));
+
+    view->total_size = 1;
+    for (size_t i = 0; i < new_ndim; i++) {
+        view->total_size *= view->shape[i];
+    }
+
+    view->data = (char*)arr->data + (index * arr->strides[0] * arr->itemsize);
+
+    return view;
 }

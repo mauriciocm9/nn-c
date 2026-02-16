@@ -151,7 +151,22 @@ int main() {
 
 
     LinearModel* model = linearmodel_new(images, labels);
-    MDArray* out = linearmodel_forward(model);
-    size_t shape[] = {0,0};
-    printf("Value is %f\n", *(double*) mdarray_get_element(out, shape));
+
+    size_t n = images->shape[0];
+    size_t* label_arr = (size_t*)malloc(n * sizeof(size_t));
+    for (size_t i = 0; i < n; i++) {
+        size_t idx[] = {i};
+        label_arr[i] = (size_t)*(double*)mdarray_get_element(labels, idx);
+    }
+
+    double lr = 1e-4;
+    for (int iter = 0; iter < 100; iter++) {
+        MDArray* scores = linearmodel_forward(model);
+        double loss = svm_loss(scores, label_arr, n);
+        printf("Iteration %d, SVM loss: %f\n", iter, loss);
+        linearmodel_backward(model, scores, label_arr, n, lr);
+        mdarray_free(scores);
+    }
+
+    free(label_arr);
 }
